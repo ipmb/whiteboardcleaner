@@ -97,7 +97,7 @@ var Dropzone = React.createClass({
     if (this.state.isDragActive) {
       message = "Drop it!"
     } else if (this.state.isUploading) {
-      message = "Uploading and processing... Sit tight";
+      message = ["Uploading and processing...", <br />, "Sit tight, this will take a few seconds."];
     } else if (this.state.error) {
       message = "Something didn't work... Try again";
     } else {
