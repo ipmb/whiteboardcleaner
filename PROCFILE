@@ -1,0 +1,1 @@
+web: whtbc-server -addr :$PORT
