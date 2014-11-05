@@ -15,7 +15,13 @@ var Dropzone = React.createClass({
   handleClick: function (e) {
     // emulate clicking to upload a file
     e.preventDefault();
-    document.getElementById('fileField').click();
+    var fileField = document.getElementById('fileField'),
+        that = this;
+    fileField.click();
+    fileField.onchange = function (e) {
+      var file = fileField.files[0];
+      that.handleUpload(file);
+    };
   },
 
   handleDragLeave: function(e) {
@@ -36,10 +42,7 @@ var Dropzone = React.createClass({
   handleDrop: function(e) {
     e.preventDefault();
 
-    this.setState({
-      isDragActive: false,
-      isUploading: true
-    });
+    this.setState({isDragActive: false});
 
     var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     this.handleUpload(file);
@@ -57,6 +60,11 @@ var Dropzone = React.createClass({
         fileReader = new FileReader(),
         that = this;
 
+    this.setState({
+      isDragActive: false,
+      isUploading: true
+    });
+
     // read image to preview upload in browser
     fileReader.readAsDataURL(file);
     fileReader.onload = function (e) {
@@ -66,7 +74,9 @@ var Dropzone = React.createClass({
     }
 
     // add file to form and POST
-    formData.append('file', file);
+    if (!document.getElementById('fileField').value) {
+      formData.append('file', file);
+    }
     xhr.open('POST', '/upload/', true);
     xhr.onload = function (e) {
       that.setState({
