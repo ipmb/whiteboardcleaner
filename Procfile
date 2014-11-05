@@ -1,1 +1,1 @@
-web: $GOPATH/bin/whtbc-server -addr :$PORT
+web: $GOPATH/bin/whtbc-server -addr :$PORT -assets ./assets
