@@ -2,9 +2,10 @@
   "name": "whiteboardcleaner",
   "version": "0.0.0",
   "description": "Application to clean up picture taken from whiteboard / paperboard",
-  "main": "index.js",
+  "main": "assets/js/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "./node_modules/browserify/bin/cmd.js assets/js/index.js -t reactify -o assets/js/bundle.js"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,8 @@
   },
   "homepage": "https://github.com/yml/whiteboardcleaner",
   "dependencies": {
-    "react": "^0.12.0"
+    "browserify": "^6.2.0",
+    "react": "^0.12.0",
+    "reactify": "^0.15.2"
   }
 }
