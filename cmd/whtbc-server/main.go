@@ -26,9 +26,12 @@ var (
 	<head>
 		<meta charset="UTF-8"/>
 		<title>{{ template "title" .}}</title>
+		<link rel="stylesheet" href="/assets/css/main.css" />
 	</head>
 	<body>
 	{{ template "content" . }}
+	<div id="upload"></div>
+	<script src="/assets/js/bundle.js"></script>
 	</body>
 </html>
 {{ end }}
@@ -58,7 +61,7 @@ var (
 		{{ if .Errors.GaussianBlurSigma }}<div class="error">{{ .Errors.GaussianBlurSigma }}</div>{{ end }}
 		<label for="GaussianBlurSigma">GaussianBlurSigma</label>
 		<input name="GaussianBlurSigma" type="text" value="{{ .Opts.GaussianBlurSigma }}"></input>
-	
+
 		{{ if .Errors.SigmoidMidpoint }}<div class="error">{{ .Errors.SigmoidMidpoint }}</div>{{ end }}
 		<label for="SigmoidMidpoint">SigmoidMidpoint</label>
 		<input name="SigmoidMidpoint" type="text" value="{{ .Opts.SigmoidMidpoint }}"></input>
@@ -67,12 +70,12 @@ var (
 		<label for="MedianKsize">MedianKsize</label>
 		<input name="MedianKsize" type="text" value="{{ .Opts.MedianKsize }}"></input>
 		</fieldset>
-		
+
 		<fieldset>
 		<legend>Image</legend>
 		{{ if .Errors.file }}<div class="error">{{ .Errors.file }}</div>{{ end }}
 		<label for="file">File:</label>
-		<input name="file" type="file"></input>
+		<input name="file" type="file" id="fileField"></input>
 		</fieldset>
 
 		<input type="submit"></input>
@@ -84,7 +87,7 @@ var (
 type appContext struct {
 	TmpDir                          string
 	PrefixTmpDir                    string
-	UploadURL, ResultURL, StaticURL string
+	UploadURL, ResultURL, StaticURL, AssetsURL string
 	Templates                       map[string]*template.Template
 }
 
@@ -108,7 +111,7 @@ func uploadHandler(ctx *appContext) http.HandlerFunc {
 		}
 
 		dirPath, err := ioutil.TempDir(ctx.TmpDir, ctx.PrefixTmpDir)
-		_, dirName := filepath.Split(dirPath)
+		//_, dirName := filepath.Split(dirPath)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -141,8 +144,11 @@ func uploadHandler(ctx *appContext) http.HandlerFunc {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 				jpeg.Encode(dstTemporaryFile, dst, &jpeg.Options{Quality: 99})
-				http.Redirect(
-					w, r, fmt.Sprintf("%s%s", ctx.ResultURL, dirName), http.StatusFound)
+				imagePath, err := filepath.Rel(os.TempDir(), dstTemporaryFile.Name())
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+				w.Write([]byte(filepath.Join(ctx.StaticURL, imagePath)))
 			}
 		}
 	}
@@ -210,6 +216,7 @@ func wrap(h http.HandlerFunc) http.HandlerFunc {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	addr := flag.String("addr", ":8080", "path to the source image")
+	asset_path := flag.String("asset_path", "./src/github.com/yml/whiteboardcleaner/assets", "path to static assets")
 	tmpls := make(map[string]*template.Template)
 	layout := template.Must(template.New("Layout").Parse(layoutTmpl))
 	tmpl := template.Must(layout.Clone())
@@ -223,6 +230,7 @@ func main() {
 		UploadURL:    "/upload/",
 		ResultURL:    "/cleaned/",
 		StaticURL:    "/static/",
+		AssetsURL:    "/assets/",
 		Templates:    tmpls,
 	}
 
@@ -233,6 +241,8 @@ func main() {
 	mux.HandleFunc(ctx.ResultURL, wrap(resultHandler(ctx)))
 	mux.Handle(ctx.StaticURL,
 		http.StripPrefix(ctx.StaticURL, http.FileServer(http.Dir(os.TempDir()))))
+	mux.Handle(ctx.AssetsURL,
+		http.StripPrefix(ctx.AssetsURL, http.FileServer(http.Dir(*asset_path))))
 	mux.HandleFunc("/", wrap(indexHandler(ctx)))
 	http.ListenAndServe(*addr, mux)
 }
