@@ -216,6 +216,7 @@ func wrap(h http.HandlerFunc) http.HandlerFunc {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	addr := flag.String("addr", ":8080", "path to the source image")
+	flag.Parse()
 	asset_path := flag.String("asset_path", "./src/github.com/yml/whiteboardcleaner/assets", "path to static assets")
 	tmpls := make(map[string]*template.Template)
 	layout := template.Must(template.New("Layout").Parse(layoutTmpl))
